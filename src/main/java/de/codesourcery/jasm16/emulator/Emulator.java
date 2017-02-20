@@ -367,7 +367,7 @@ public final class Emulator implements IEmulator
 
 	private volatile boolean ignoreAccessToUnknownDevices=false;    
 	private volatile boolean checkMemoryWrites = false;
-	private volatile boolean haltOnStoreToImmediateValue = true;
+	private volatile boolean haltOnStoreToImmediateValue = false;
 	private volatile Throwable lastEmulationError = null;
 	
 	private volatile EmulationSpeed emulationSpeed = EmulationSpeed.MAX_SPEED;
@@ -572,6 +572,7 @@ public final class Emulator implements IEmulator
 
 	public Emulator() {
 		clockThread = new ClockThread();
+		clockThread.start();
 	}
 
 	/**
@@ -921,7 +922,7 @@ public final class Emulator implements IEmulator
 	 * 
 	 * @return number of DCPU-16 cycles the command execution took 
 	 */
-	protected int internalExecuteOneInstruction() throws EmulationErrorException
+	protected int internalExecuteOneInstruction() 
 	{
 		beforeCommandExecution();
 
@@ -962,13 +963,18 @@ public final class Emulator implements IEmulator
 					}
 				}
 			}
-		}
+		} 
 		catch(EmulationErrorException e) {
-			
+			stop( e );
+			LOG.error( "internalExecuteOneInstruction(): Emulation error - "+e.getMessage()); 
+			out.warn("Simulation stopped due to a program error ( at address ."+visibleCPU.pc+")",e);
+			return 0;		    
+		}
+		catch(Exception e) {
+			stop( e );
 			LOG.error( "internalExecuteOneInstruction(): Internal error - "+e.getMessage(),e); 
 			out.error("Simulation stopped due to an internal error ( at address ."+visibleCPU.pc+")");
-			stop(e);
-			throw e;
+			return 0;
 		} 
 		finally 
 		{
@@ -2719,9 +2725,9 @@ public final class Emulator implements IEmulator
             } else {
                 ex = 0;
             }
-            if ( isEXTargetOperand( instructionWord ) ) { // Do not overwrite EX with result
-            	return 2+source.cycleCount;
-            }
+            //if ( isEXTargetOperand( instructionWord ) ) { // Do not overwrite EX with result
+            //	return 2+source.cycleCount;
+            //}
             return 2+storeTargetOperand( instructionWord , acc )+source.cycleCount;         
         }
 

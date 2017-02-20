@@ -38,6 +38,7 @@ import de.codesourcery.jasm16.emulator.devices.HardwareInterrupt;
 import de.codesourcery.jasm16.emulator.memory.IMemory;
 import de.codesourcery.jasm16.emulator.memory.MemoryRegion;
 import de.codesourcery.jasm16.utils.Misc;
+import javax.swing.JButton;
 import de.codesourcery.jasm16.emulator.devices.IDcpuHardware;
 
 /**
@@ -294,6 +295,10 @@ public class DefaultKeyboard implements IDcpuHardware {
 	    this.useLegacyMemoryBuffer = useLegacyMemoryBuffer;
 	}
 	
+	public void simulateKeyTyped(int keyCode, char keyChar) {
+		keyListener.keyTyped(new KeyEvent(new JButton(), KeyEvent.KEY_TYPED, System.currentTimeMillis(), 0, keyCode, keyChar));
+	}
+	
 	@Override
 	public void reset() {
 	    synchronized (BUFFER_LOCK) {
@@ -305,10 +310,6 @@ public class DefaultKeyboard implements IDcpuHardware {
 	        	legacyKeyboardBuffer.reset();
 	        }
         }
-	}
-	
-	public void simulateKeyTyped(int keyCode, char keyChar) {
-		keyListener.keyTyped(new KeyEvent(null, KeyEvent.KEY_TYPED, System.currentTimeMillis(), 0, keyCode, keyChar));
 	}
 	
 	public void attach(Component comp) 

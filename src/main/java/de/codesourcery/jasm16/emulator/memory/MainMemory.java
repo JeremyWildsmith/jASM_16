@@ -16,10 +16,8 @@
 package de.codesourcery.jasm16.emulator.memory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -45,83 +43,6 @@ public final class MainMemory implements IMemory, IMemoryTypes
 {
 	private static final Logger LOG = Logger.getLogger(MainMemory.class);
 	
-	private final IMemoryRegion NOP_RANGE = new IMemoryRegion() {
-
-		@Override
-		public void clear() {
-			throw new UnsupportedOperationException("Not implemented");
-		}
-
-		@Override
-		public void write(int wordAddress, int value) {
-			throw new UnsupportedOperationException("Not implemented");
-		}
-
-		@Override
-		public void write(Address address, int value) {
-			throw new UnsupportedOperationException("Not implemented");
-		}
-
-		@Override
-		public Size getSize() {
-			throw new UnsupportedOperationException("Not implemented");			
-		}
-
-		@Override
-		public int read(int wordAddress) {
-			throw new UnsupportedOperationException("Not implemented");			
-		}
-
-		@Override
-		public int read(Address address) {
-			throw new UnsupportedOperationException("Not implemented");
-		}
-
-		@Override
-		public Set<Flag> getFlags() {
-			return Collections.emptySet();
-		}
-
-		@Override
-		public boolean hasFlag(Flag flag) {
-			return false;
-		}
-
-		@Override
-		public long getTypeId() {
-			throw new UnsupportedOperationException("Not implemented");			
-		}
-
-		@Override
-		public AddressRange getAddressRange() {
-			throw new UnsupportedOperationException("Not implemented");			
-		}
-
-		@Override
-		public String getRegionName() {
-			throw new UnsupportedOperationException("Not implemented");			
-		}
-
-		@Override
-		public boolean supportsMerging() {
-			throw new UnsupportedOperationException("Not implemented");			
-		}
-
-		@Override
-		public List<IMemoryRegion> split(AddressRange gap) throws IllegalArgumentException 
-		{
-			throw new UnsupportedOperationException("Not implemented");			
-		}
-
-		@Override
-		public boolean contains(int wordAddress) {
-			return false;
-		}		
-	};
-	
-	private IMemoryRegion lastReadLookup = NOP_RANGE;
-	private IMemoryRegion lastWriteLookup = NOP_RANGE;	
-	
 	// GuardedBy( regions )
 	private final List<IMemoryRegion> regions = new ArrayList<IMemoryRegion>(); 
 	private volatile boolean checkWriteAccess;
@@ -137,8 +58,7 @@ public final class MainMemory implements IMemory, IMemoryTypes
 
 	public MainMemory(int sizeInWords,boolean checkWriteAccess) 
 	{
-		final IMemoryRegion mainMemory = createMainMemory( new AddressRange( WordAddress.ZERO , Size.words( 65536 ) ) );
-		regions.add( mainMemory );
+		regions.add( createMainMemory( new AddressRange( WordAddress.ZERO , Size.words( 65536 ) ) ) );
 		this.writeProtectedMemoryRanges = new Bitfield( sizeInWords );
 		this.checkWriteAccess = checkWriteAccess;
 	}    
@@ -165,7 +85,6 @@ public final class MainMemory implements IMemory, IMemoryTypes
 	public void clear()
 	{
 		synchronized(regions) {
-			lastReadLookup = lastWriteLookup = NOP_RANGE;
 			for ( IMemory r : regions ) {
 				r.clear();
 			}
@@ -221,8 +140,6 @@ public final class MainMemory implements IMemory, IMemoryTypes
 
 		synchronized(regions) 
 		{
-			lastReadLookup = lastWriteLookup = NOP_RANGE;			
-			
 		    boolean found = false;
 			for (Iterator<IMemoryRegion> it = regions.iterator(); it.hasNext();) {
 				final IMemoryRegion existing = it.next();
@@ -329,8 +246,6 @@ public final class MainMemory implements IMemory, IMemoryTypes
 		
 		synchronized( regions ) 
 		{
-			lastReadLookup = lastWriteLookup = NOP_RANGE;
-			
 			// copy existing memory contents into new region
 			MemUtils.memCopy( this , newRegion , newRegion.getAddressRange().getStartAddress() , newRegion.getSize() );
 			
@@ -377,20 +292,16 @@ public final class MainMemory implements IMemory, IMemoryTypes
 		}
 	}
 
-	private IMemoryRegion getReadRegion(int wordAddress) 
+	private IMemoryRegion getRegion(int wordAddress) 
 	{
 		synchronized( regions ) 
 		{
 			// TODO: performance - Maybe replace with binary search ??
-			if ( lastReadLookup.contains( wordAddress ) ) {
-				return lastReadLookup;
-			}
 			final int len = regions.size();
 			for ( int i = 0 ; i < len ; i++ )
 			{
 				final IMemoryRegion r = regions.get(i);
-				if ( r.contains( wordAddress ) ) {
-					lastReadLookup = r;
+				if ( r.getAddressRange().contains( wordAddress ) ) {
 					return r;
 				}
 			}
@@ -408,38 +319,6 @@ public final class MainMemory implements IMemory, IMemoryTypes
 		}
 		throw new RuntimeException("Address not mapped: 0x"+Misc.toHexString( wordAddress ));		
 	}
-	
-	private IMemoryRegion getWriteRegion(int wordAddress) 
-	{
-		synchronized( regions ) 
-		{
-			// TODO: performance - Maybe replace with binary search ??
-			if ( lastWriteLookup.contains( wordAddress ) ) {
-				return lastWriteLookup;
-			}
-			final int len = regions.size();
-			for ( int i = 0 ; i < len ; i++ )
-			{
-				final IMemoryRegion r = regions.get(i);
-				if ( r.contains( wordAddress ) ) {
-					lastWriteLookup = r;
-					return r;
-				}
-			}
-		}
-
-		// address not mapped...
-		LOG.error("getRegion(): Access to unmapped address 0x"+Misc.toHexString( wordAddress ) );
-		LOG.error("getRegion(): Memory layout:\n\n");
-		synchronized( regions ) 
-		{
-			for ( IMemoryRegion r : regions ) 
-			{
-				LOG.error("getRegion(): " + r );
-			}
-		}
-		throw new RuntimeException("Address not mapped: 0x"+Misc.toHexString( wordAddress ));		
-	}	
 	
 	@Override
 	public int read(Address adr)
@@ -451,7 +330,7 @@ public final class MainMemory implements IMemory, IMemoryTypes
 	@Override
 	public int read(int address)
 	{
-		final IMemoryRegion region = getReadRegion( address );
+		final IMemoryRegion region = getRegion( address );
         int newValue = address - region.getAddressRange().getStartAddress().getWordAddressValue();
         if ( newValue < 0 ) {
             newValue = (int) ( (WordAddress.MAX_ADDRESS+1)+newValue );
@@ -473,7 +352,7 @@ public final class MainMemory implements IMemory, IMemoryTypes
 	@Override
 	public void write(int wordAddress, int value) throws MemoryProtectionFaultException
 	{
-        final IMemoryRegion region = getWriteRegion( wordAddress );
+        final IMemoryRegion region = getRegion( wordAddress );
         
 		if ( checkWriteAccess ) {
 			checkWritePermitted(wordAddress,value);
