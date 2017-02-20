@@ -138,9 +138,9 @@ public class DefaultKeyboard implements IDcpuHardware {
 		@Override
 		public void keyTyped(KeyEvent e) 
 		{
-		    if ( ! emulationRunning.get() ) {
-		        return;
-		    }
+		    //if ( ! emulationRunning.get() ) {
+		    //    return;
+		    //}
 		    
 			final int c = e.getKeyChar();
 			if ( c >= 0x20 && c <= 0x7f ) {
@@ -284,7 +284,7 @@ public class DefaultKeyboard implements IDcpuHardware {
 		
 		private void sendInterrupt() 
 		{
-			if ( interruptMessage != null && emulationRunning.get() ) 
+			if ( interruptMessage != null && emulator != null ) 
 			{
 				emulator.triggerInterrupt( new HardwareInterrupt( DefaultKeyboard.this , interruptMessage ) );
 			}			
