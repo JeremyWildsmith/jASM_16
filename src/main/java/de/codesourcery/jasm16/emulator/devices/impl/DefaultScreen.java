@@ -73,12 +73,12 @@ public final class DefaultScreen implements IDcpuHardware {
 
     public static final int IMG_CHARS_PER_ROW = 32;
 
-    public static final int BORDER_WIDTH = 10;
-    public static final int BORDER_HEIGHT = 10;    
+    public static final int BORDER_WIDTH = 0;
+    public static final int BORDER_HEIGHT = 0;    
 
     private final int SCREEN_WIDTH;
     private final int SCREEN_HEIGHT;
-
+	
     private volatile ILogger out;
 
     public static final DeviceDescriptor DESC = new DeviceDescriptor("LEM-1802",
@@ -386,8 +386,9 @@ public final class DefaultScreen implements IDcpuHardware {
     }
 
     protected void setupDefaultFontRAM() {
-
-        fontRAM.unmap();
+		if(fontRAM != null)
+			fontRAM.unmap();
+		
         FontRAM tmp = new FontRAM( Address.wordAddress( 0 ) );
         tmp.setup( consoleScreen );
         this.fontRAM = tmp;
@@ -523,7 +524,9 @@ public final class DefaultScreen implements IDcpuHardware {
 
     protected void setupDefaultPaletteRAM() 
     {
-        paletteRAM.unmap();
+		if(paletteRAM != null)
+			paletteRAM.unmap();
+		
         paletteRAM = new PaletteRAM(Address.wordAddress( 0) );
         paletteRAM.setDefaultPalette();
     }
@@ -550,7 +553,7 @@ public final class DefaultScreen implements IDcpuHardware {
     }
 
     public boolean isActive() {
-        return videoRAM != null && isAttached();
+        return videoRAM != null && isAttached() && this.emulator != null;
     }
 
     private boolean isAttached() {
@@ -589,7 +592,7 @@ public final class DefaultScreen implements IDcpuHardware {
             final boolean fontRAMChanged = fontRAM.hasChanged();
             final boolean updateRequired = fontRAMChanged || paletteRAM.hasChanged() || videoRAM.hasChanged();		
 
-            if ( updateRequired || (blinkingCharactersOnScreen && lastBlinkState != blinkState) ) 
+            if (updateRequired || (blinkingCharactersOnScreen && lastBlinkState != blinkState) ) 
             { 
                 if ( fontRAMChanged ) 
                 {
@@ -694,11 +697,15 @@ public final class DefaultScreen implements IDcpuHardware {
 
         this.out = emulator.getOutput();
 
+		attach(new JButton());
+		setupDefaultFontRAM();
+        setupDefaultPaletteRAM();
+		
         if ( refreshThread == null || ! refreshThread.isAlive() ) {
             refreshThread = new RefreshThread();
             refreshThread.start();
         }
-
+		
         emulator.getOutput().debug("Screen attached to emulator.");
     }
 
