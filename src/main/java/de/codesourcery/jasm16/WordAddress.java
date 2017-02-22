@@ -36,7 +36,7 @@ public class WordAddress extends Address
     
     private final int value;
     
-    protected WordAddress(long value) throws IllegalArgumentException 
+    public WordAddress(long value) throws IllegalArgumentException 
     {
         if ( value < 0 ) {
             throw new IllegalArgumentException("Address value must be positive: "+value);
