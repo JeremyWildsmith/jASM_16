@@ -40,6 +40,7 @@ import de.codesourcery.jasm16.emulator.memory.MemoryRegion;
 import de.codesourcery.jasm16.utils.Misc;
 import javax.swing.JButton;
 import de.codesourcery.jasm16.emulator.devices.IDcpuHardware;
+import javafx.scene.input.KeyCode;
 
 /**
  * Default keyboard device.
@@ -143,9 +144,14 @@ public class DefaultKeyboard implements IDcpuHardware {
 		    //}
 		    
 			final int c = e.getKeyChar();
-			if ( c >= 0x20 && c <= 0x7f ) {
+			final int keyCode = e.getKeyCode();
+			
+			if ( c >= 0x20 && c <= 0x7f )
 				keyTyped( c , true );
-			}
+			else if (keyCode == KeyEvent.VK_ENTER) 
+				keyTyped(0x11, true );
+			else if (keyCode == KeyEvent.VK_BACK_SPACE) 
+				keyTyped(0x10, true );
 		}
 		
 		private void keyTyped(int mappedKeyCode,boolean sendInterrupt) 
@@ -296,7 +302,7 @@ public class DefaultKeyboard implements IDcpuHardware {
 	}
 	
 	public void simulateKeyTyped(int keyCode, char keyChar) {
-		keyListener.keyTyped(new KeyEvent(new JButton(), KeyEvent.KEY_TYPED, System.currentTimeMillis(), 0, keyCode, keyChar));
+		keyListener.keyTyped(new KeyEvent(new JButton(), KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, keyCode, keyChar));
 	}
 	
 	@Override
