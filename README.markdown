@@ -1,5 +1,8 @@
 (C) 2012-2013 Tobias Gierke / licensed under Apache License 2.0, http://www.apache.org/licenses/LICENSE-2.0
 
+Fork
+--------------------------------------------
+This project is a fork of https://github.com/JeremyWildsmith/jASM_16 that resolves some issues with the virtual machine executing dasm bytecode.
 
 Embeddable DCPU-16 assembler written in Java
 --------------------------------------------

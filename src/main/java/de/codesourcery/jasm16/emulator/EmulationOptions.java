@@ -60,7 +60,7 @@ public final class EmulationOptions {
     private boolean mapFontRamUponAddDevice = false;
     private boolean runFloppyAtFullSpeed = false;
     private EmulationSpeed emulationSpeed = DEFAULT_EMULATION_SPEED;
-    private boolean crashOnStoreWithImmediate = true;
+    private boolean crashOnStoreWithImmediate = false;
 
     private InsertedDisk insertedDisk;
 
