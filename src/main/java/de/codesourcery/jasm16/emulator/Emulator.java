@@ -1832,6 +1832,7 @@ public final class Emulator implements IEmulator {
 
 			synchronized (interruptQueue) {
 				if (currentInterrupt == null && !isQueueInterrupts()) {
+					setQueueInterrupts(true);
 					currentInterrupt = interrupt;
 				} else { // there's either already an IRQ waiting to be processed or the CPU is currently told to queue interrupts
 					if (interruptQueue.size() >= INTERRUPT_QUEUE_SIZE) {
@@ -1976,6 +1977,7 @@ public final class Emulator implements IEmulator {
 
 		@Override
 		public void setQueueInterrupts(boolean yesNo) {
+
 			this.queueInterrupts = yesNo;
 		}
 
