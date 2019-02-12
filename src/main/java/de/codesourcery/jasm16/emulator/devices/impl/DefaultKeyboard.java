@@ -40,7 +40,6 @@ import de.codesourcery.jasm16.emulator.memory.MemoryRegion;
 import de.codesourcery.jasm16.utils.Misc;
 import javax.swing.JButton;
 import de.codesourcery.jasm16.emulator.devices.IDcpuHardware;
-import javafx.scene.input.KeyCode;
 
 /**
  * Default keyboard device.
