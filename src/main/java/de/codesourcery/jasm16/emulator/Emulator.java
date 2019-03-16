@@ -26,6 +26,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import de.codesourcery.jasm16.emulator.memory.*;
 import org.apache.log4j.Logger;
 
 import de.codesourcery.jasm16.Address;
@@ -45,10 +46,6 @@ import de.codesourcery.jasm16.emulator.exceptions.InterruptQueueFullException;
 import de.codesourcery.jasm16.emulator.exceptions.InvalidDeviceSlotNumberException;
 import de.codesourcery.jasm16.emulator.exceptions.InvalidTargetOperandException;
 import de.codesourcery.jasm16.emulator.exceptions.UnknownOpcodeException;
-import de.codesourcery.jasm16.emulator.memory.IMemoryRegion;
-import de.codesourcery.jasm16.emulator.memory.IReadOnlyMemory;
-import de.codesourcery.jasm16.emulator.memory.MainMemory;
-import de.codesourcery.jasm16.emulator.memory.MemUtils;
 import de.codesourcery.jasm16.utils.Misc;
 import de.codesourcery.jasm16.emulator.devices.IDcpuHardware;
 

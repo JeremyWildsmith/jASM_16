@@ -23,6 +23,9 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceArray;
@@ -133,6 +136,10 @@ public final class DefaultScreen implements IDcpuHardware {
     private volatile boolean blinkingCharactersOnScreen = false;
     private volatile boolean lastBlinkState;
     private volatile boolean blinkState;
+
+    private final ConcurrentHashMap<Integer, Integer> vramDelta = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, Integer> fontVramDelta = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, Integer> paletteVramDelta = new ConcurrentHashMap<>();
 
     private final class RefreshThread extends Thread {
 
@@ -337,19 +344,21 @@ public final class DefaultScreen implements IDcpuHardware {
         {
             super.write( address , value );
             hasChanged.set(true);
+            fontVramDelta.put(address.getWordAddressValue(), value);
         }
 
         @Override
         public void write(int wordAddress, int value) 
         {
             super.write(wordAddress, value);
-            hasChanged.set(true);            
+            hasChanged.set(true);
+            fontVramDelta.put(wordAddress, value);
         }		
 
         @Override
         public void clear() {
             super.clear();
-            hasChanged.set(true);            
+            hasChanged.set(true);
         }
 
         public boolean hasChanged() 
@@ -480,6 +489,7 @@ public final class DefaultScreen implements IDcpuHardware {
             super.write( address, value);
             cache.set( address.getValue() , toJavaColor( value ) );
             hasChanged.set(true);
+            paletteVramDelta.put(address.getWordAddressValue(), value);
         }
 
         @Override
@@ -487,10 +497,11 @@ public final class DefaultScreen implements IDcpuHardware {
             super.write( wordAddress , value );
             cache.set( wordAddress , toJavaColor( value ) );    
             hasChanged.set(true);
+            paletteVramDelta.put(wordAddress, value);
         }       
     }    
 
-    protected final class VideoRAM extends StatefulMemoryRegion {
+    public final class VideoRAM extends StatefulMemoryRegion {
 
         private final AtomicBoolean hasChanged = new AtomicBoolean(false);
 
@@ -513,12 +524,14 @@ public final class DefaultScreen implements IDcpuHardware {
         public void write(Address address, int value) {
             super.write( address, value);
             hasChanged.set(true);
+            vramDelta.put(address.getWordAddressValue(), value);
         }
 
         @Override
         public void write(int wordAddress, int value) {
             super.write( wordAddress , value );
             hasChanged.set(true);
+            vramDelta.put(wordAddress, value);
         }       
     }
 
@@ -751,6 +764,31 @@ public final class DefaultScreen implements IDcpuHardware {
         synchronized( PEER_LOCK ) {
             this.peer = null;
         }
+    }
+
+    public VideoRAM getVram() {
+        return videoRAM;
+    }
+
+    public HashMap<Integer, Integer> getVramDelta() {
+        HashMap<Integer, Integer> map = new HashMap<>(vramDelta);
+        vramDelta.clear();
+
+        return map;
+    }
+
+    public HashMap<Integer, Integer> getPaletteDelta() {
+        HashMap<Integer, Integer> map = new HashMap<>(paletteVramDelta);
+        paletteVramDelta.clear();
+
+        return map;
+    }
+
+    public HashMap<Integer, Integer> getFontDelta() {
+        HashMap<Integer, Integer> map = new HashMap<>(fontVramDelta);
+        fontVramDelta.clear();
+
+        return map;
     }
 
     public BufferedImage getScreenImage() 
